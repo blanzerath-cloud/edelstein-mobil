@@ -175,11 +175,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Environment variables
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kirchen-mitfahr-app-123';
         const firebaseConfig = {
           apiKey: "AIzaSyAawTRBG47m9vKP48_benrv8BCHW-RVZB0",
           authDomain: "edelsteingemeinde-mobil.firebaseapp.com",
@@ -188,7 +186,6 @@
           messagingSenderId: "104780035793",
           appId: "1:104780035793:web:3c3efe15203996056e37f0"
         };
-        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Init Firebase
         const app = initializeApp(firebaseConfig);
@@ -224,14 +221,9 @@
 
         async function initApp() {
             try {
-                if (authToken) {
-                    await signInWithCustomToken(auth, authToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
+                await signInAnonymously(auth);
                 currentUser = auth.currentUser;
-                document.getElementById('authStatus').innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> Bereit`;
+                document.getElementById('authStatus').innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> Verbunden`;
                 
                 // Pre-fill today's date in forms
                 const today = new Date().toISOString().split('T')[0];
@@ -249,9 +241,9 @@
         function listenToRides() {
             if (!currentUser) return;
 
-            const ridesRef = collection(db, 'artifacts', appId, 'public', 'data', 'rides');
+            // Sauberer Datenbank-Pfad: Direkt im Ordner "rides"
+            const ridesRef = collection(db, 'rides');
             
-            // Simple query, no ordering to follow RULE 2
             onSnapshot(ridesRef, (snapshot) => {
                 allRides = [];
                 snapshot.forEach((doc) => {
@@ -286,7 +278,7 @@
             };
 
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rides'), data);
+                await addDoc(collection(db, 'rides'), data);
                 closeModal('offerModal');
                 document.getElementById('offerForm').reset();
                 showToast("Angebot erfolgreich erstellt!");
@@ -315,13 +307,13 @@
                 location: document.getElementById('requestLocation').value.trim(),
                 date: document.getElementById('requestDate').value,
                 time: document.getElementById('requestTime').value,
-                seats: parseInt(document.getElementById('requestSeats').value), // here it means 'Anzahl Personen'
+                seats: parseInt(document.getElementById('requestSeats').value),
                 authorId: currentUser.uid,
                 createdAt: serverTimestamp()
             };
 
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rides'), data);
+                await addDoc(collection(db, 'rides'), data);
                 closeModal('requestModal');
                 document.getElementById('requestForm').reset();
                 showToast("Gesuch erfolgreich erstellt!");
@@ -336,9 +328,8 @@
 
         async function deleteRide(id) {
             if(!currentUser) return;
-            // Basic confirm-like modal would be better, but implementing simple direct delete for UI smoothness
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rides', id));
+                await deleteDoc(doc(db, 'rides', id));
                 showToast("Eintrag gelöscht.");
             } catch (err) {
                 showToast("Fehler beim Löschen.", true);
@@ -350,7 +341,6 @@
             const ride = allRides.find(r => r.id === id);
             if (!ride) return;
 
-            // Format date for German locale (DD.MM.YYYY)
             const dateParts = ride.date.split('-');
             const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : ride.date;
 
@@ -381,7 +371,6 @@
             const offersList = document.getElementById('offersList');
             const requestsList = document.getElementById('requestsList');
 
-            // Sort by date (descending for now, or ascending. Let's do ascending for upcoming events)
             const sortedRides = [...allRides].sort((a, b) => {
                 const dateA = new Date(`${a.date}T${a.time}`);
                 const dateB = new Date(`${b.date}T${b.time}`);
@@ -413,7 +402,6 @@
             const seatsLabel = isOffer ? (ride.seats === 1 ? '1 freier Platz' : `${ride.seats} freie Plätze`) 
                                        : (ride.seats === 1 ? '1 Person' : `${ride.seats} Personen`);
             
-            // Format Date (DD.MM.YYYY)
             const dateParts = ride.date.split('-');
             const formattedDate = dateParts.length === 3 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}` : ride.date;
 
@@ -462,7 +450,6 @@
             `;
         }
 
-        // Tab and Modal helpers
         function switchTab(tab) {
             currentTab = tab;
             const tabOffers = document.getElementById('tabOffers');
@@ -485,17 +472,14 @@
 
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
-            // Prevent scrolling on body
             document.body.style.overflow = 'hidden';
         }
 
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
-            // Restore scrolling
             document.body.style.overflow = 'auto';
         }
 
-        // Bootstrap
         initApp();
     </script>
 </body>
