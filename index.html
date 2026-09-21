@@ -180,11 +180,13 @@
 
         // Environment variables
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kirchen-mitfahr-app-123';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // Mock config, usually provided by env
-            apiKey: "mock-key",
-            projectId: "mock-project",
-            appId: "mock-app-id"
+        const firebaseConfig = {
+          apiKey: "AIzaSyAawTRBG47m9vKP48_benrv8BCHW-RVZB0",
+          authDomain: "edelsteingemeinde-mobil.firebaseapp.com",
+          projectId: "edelsteingemeinde-mobil",
+          storageBucket: "edelsteingemeinde-mobil.firebasestorage.app",
+          messagingSenderId: "104780035793",
+          appId: "1:104780035793:web:3c3efe15203996056e37f0"
         };
         const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
